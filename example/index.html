@@ -18,16 +18,30 @@ limitations under the License.
 <head>
   <title>UserAleJS - Example Page</title>
   <script
-    src="file:///...[your file path].../build/userale-1.0.0.min.js"
-    data-url="http://localhost:8000/"
-    data-user="example-user"
+    src="../build/userale-1.0.0.min.js"
+    data-url="http://localhost:3000/data"
+    data-user="example-user-sessionID"
     data-version="1.0.0"
-    data-tool="Apache UserALE.js Example"
+    data-tool="Capture stuff"
+    data-log-details="true"
   ></script>
 </head>
 <body>
   <div class="container">
     <button id="test_button">Click me!</button>
   </div>
+  Messages:
+  <ul id="messages"></ul>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.1/socket.io.js"></script>
+  <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+  <script>
+    $(function () {
+      const socket = io();
+      socket.on('logging', function(msg){
+        console.log('msg: ', msg);
+        $('#messages').append($('<li>').text(msg));
+      });
+    });
+  </script>
 </body>
 </html>

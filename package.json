@@ -52,5 +52,9 @@
     "rollup": "^0.26.0",
     "rollup-plugin-json": "^2.0.1",
     "sinon": "^1.17.6"
+  },
+  "dependencies": {
+    "socket.io": "^2.2.0",
+    "uuid": "^3.3.2"
   }
 }

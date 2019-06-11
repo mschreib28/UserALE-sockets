@@ -15,13 +15,28 @@
  * limitations under the License.
  */
 
-var express = require('express');
-var bodyParser = require('body-parser');
-var fs = require('fs');
-var path = require('path');
+const express = require('express');
+const bodyParser = require('body-parser');
+const fs = require('fs');
+const path = require('path');
+const uuidv4 = require('uuid/v4'); // (v4 = random)
 
-var logDirectory = path.resolve(__dirname, '../logs');
-var logPath = path.resolve(logDirectory, 'logs_' + (new Date()).getTime() + '.json');
+const app = express();
+const socketIO = require('socket.io');
+const PORT = 3000;
+
+const server = express()
+    .use(app)
+    .listen(PORT, () => console.log(`Listening Socket on ${ PORT }`));
+const io = socketIO(server);
+
+
+const logDirectory = path.resolve(__dirname, '../logs');
+const logPath = path.resolve(logDirectory, 'logs_' + (new Date()).getTime() + '.json');
+
+const uuid = uuidv4();
+const sessionId = 1;
+const socketPath = '#jaic/'+uuid+'/'+sessionId;
 
 try {
   fs.lstatSync(logDirectory);
@@ -29,13 +44,12 @@ try {
   fs.mkdirSync(logDirectory); // Create directory if it doesn't exist
 }
 
-var wStream = fs.createWriteStream(logPath);
+const wStream = fs.createWriteStream(logPath);
 wStream.on('open', function () {
   wStream.write('[');
 });
 
-var firstLog = true;
-var app = express();
+let firstLog = true;
 
 app.set('port', process.env.PORT || 8000);
 app.use(function (req, res, next) {
@@ -56,15 +70,12 @@ app.use(bodyParser.json({limit: '100mb'}));
 app.use('/build', express.static(path.join(__dirname, '/../build')));
 app.set('view engine', 'jade');
 
-
 app.get('/', function (req, res) {
   res.sendFile('index.html', { root: __dirname });
 });
 
-app.post('/', function (req, res) {
-  console.log(req.body);
-
-  var delimiter = ',\n\t';
+app.post('/data', function (req, res) {
+  let delimiter = ',\n\t';
 
   if (firstLog) {
     wStream.write('\n\t');
@@ -72,22 +83,30 @@ app.post('/', function (req, res) {
   } else {
     wStream.write(delimiter);
   }
-  
-  var logLength = req.body.length - 1;
-  req.body.forEach(function (log, i) {
-    if (i === logLength) {
-      delimiter = '';
-    }
 
-    wStream.write(JSON.stringify(log) + delimiter);
-  });
-
+  let logLength = req.body.length - 1;
+  if (logLength) {
+    req.body.forEach(function (log, i) {
+      if (i === logLength) {
+        delimiter = '';
+      }
+      wStream.write(JSON.stringify(log) + delimiter);
+      console.log('emitting ');
+      io.emit('logging', JSON.stringify(log));
+    });
+  }
   res.sendStatus(200);
+
 });
 
-app.listen(app.get('port'), function () {
-  console.log('UserAle Local running on port', app.get('port'));
-});
+io.on('connection', onConnect);
+
+function onConnect(socket) {
+  socket.on('logging', function(log) {
+    console.log('received log: ', log);
+  });
+}
+
 
 function closeLogServer () {
   wStream.end('\n]');
