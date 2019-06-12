@@ -37,9 +37,12 @@ export function getInitialSettings() {
   settings.userId = get('data-user') || null;
   settings.version = get('data-version') || null;
   settings.logDetails = get('data-log-details') === 'true' ? true : false;
+  settings.retries = get('data-retries') || 0;
   settings.resolution = +get('data-resolution') || 500;
+  settings.socketChannel = get('data-socket-channel') || '#';
   settings.toolName = get('data-tool') || null;
   settings.userFromParams = get('data-user-from-params') || null;
+  settings.useSockets = get('data-use-sockets') || false;
   settings.time = timeStampScale(document.createEvent('CustomEvent'));
 
   return settings;

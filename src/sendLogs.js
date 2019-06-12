@@ -21,8 +21,9 @@
  * @param  {Object} config Configuration object to use when logging.
  */
 export function initSender(logs, config) {
-  sendOnInterval(logs, config);
-  sendOnClose(logs, config);
+  let sendLogs = config.useSockets ? sendLogsOverSockets : sendLogsOverPost;
+  sendOnInterval(logs, config, sendLogs);
+  sendOnClose(logs, config, sendLogs);
 }
 
 /**
@@ -30,11 +31,12 @@ export function initSender(logs, config) {
  * if the queue has reached the threshold specified by the provided config.
  * @param  {Array} logs   Array of logs to read from.
  * @param  {Object} config Configuration object to be read from.
+ * @param {Function} sendLogs Function for sending logs
  */
-export function sendOnInterval(logs, config) {
+export function sendOnInterval(logs, config, sendLogs) {
   setInterval(function() {
     if (logs.length >= config.logCountThreshold) {
-      sendLogs(logs.slice(0), config.url, 0); // Send a copy
+      sendLogs(logs.slice(0), config.url, config.retries); // Send a copy
       logs.splice(0); // Clear array reference (no reassignment)
     }
   }, config.transmitInterval);
@@ -44,8 +46,9 @@ export function sendOnInterval(logs, config) {
  * Attempts to flush the remaining logs when the window is closed.
  * @param  {Array} logs   Array of logs to be flushed.
  * @param  {Object} config Configuration object to be read from.
+ * @param {Function} sendLogs Function for sending logs
  */
-export function sendOnClose(logs, config) {
+export function sendOnClose(logs, config, sendLogs) {
   if (navigator.sendBeacon) {
     window.addEventListener('unload', function() {
       navigator.sendBeacon(config.url, JSON.stringify(logs));
@@ -66,10 +69,9 @@ export function sendOnClose(logs, config) {
  * @param  {string} url     URL to send the POST request to.
  * @param  {Number} retries Maximum number of attempts to send the logs.
  */
-export function sendLogs(logs, url, retries) {
-  var req = new XMLHttpRequest();
-
-  var data = JSON.stringify(logs);
+export function sendLogsOverPost(logs, url, retries) {
+  let data = JSON.stringify(logs);
+  let req = new XMLHttpRequest();
 
   req.open('POST', url);
   req.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
@@ -77,7 +79,32 @@ export function sendLogs(logs, url, retries) {
   req.onreadystatechange = function() {
     if (req.readyState === 4 && req.status !== 200) {
       if (retries > 0) {
-        sendLogs(logs, url, retries--);
+        sendLogsOverPost(logs, url, retries--);
+      }
+    }
+  };
+
+  req.send(data);
+}
+
+/**
+ * Sends the provided array of logs to the specified url,
+ * retrying the request up to the specified number of retries.
+ * @param  {Array} logs    Array of logs to send.
+ * @param  {string} url     URL to send the POST request to.
+ * @param  {Number} retries Maximum number of attempts to send the logs.
+ */
+export function sendLogsOverSockets(logs, url, retries) {
+  let data = JSON.stringify(logs);
+
+  io.emit(config.socketChannel, JSON.stringify(log));
+  req.open('POST', url);
+  req.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
+
+  req.onreadystatechange = function() {
+    if (req.readyState === 4 && req.status !== 200) {
+      if (retries > 0) {
+        sendLogsOverSockets(logs, url, retries--);
       }
     }
   };
