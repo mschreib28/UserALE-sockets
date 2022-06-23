@@ -47,7 +47,7 @@
     "gulp-rename": "^1.2.2",
     "gulp-uglify": "^2.0.0",
     "gulp-util": "^3.0.7",
-    "jsdom": "^8.4.0",
+    "jsdom": "^16.5.0",
     "nodemon": "^1.9.2",
     "rollup": "^0.26.0",
     "rollup-plugin-json": "^2.0.1",
