@@ -41,7 +41,7 @@
     "chai": "^3.5.0",
     "del": "^2.2.2",
     "express": "^4.13.4",
-    "gulp": "^3.9.1",
+    "gulp": "^4.0.2",
     "gulp-eslint": "^3.0.1",
     "gulp-mocha": "^6.0.0",
     "gulp-rename": "^1.2.2",
